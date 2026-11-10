@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>devX OS</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Escritorio con fondo.jpg */
+        #desktop {
+            width: 100vw;
+            height: calc(100vh - 48px);
+            background: #0078d7 url('fondo.jpg') no-repeat center center / cover;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            padding: 10px;
+            gap: 15px;
+        }
+
+        /* Iconos del Escritorio */
+        .shortcut {
+            width: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+            cursor: pointer;
+            padding: 8px 5px;
+            border-radius: 4px;
+        }
+
+        .shortcut:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .shortcut .icon {
+            font-size: 36px;
+            margin-bottom: 5px;
+        }
+
+        .shortcut span {
+            font-size: 12px;
+            word-break: break-word;
+        }
+
+        /* Barra de Tareas */
+        #taskbar {
+            width: 100vw;
+            height: 48px;
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            z-index: 10000;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .taskbar-left, .taskbar-center, .taskbar-right {
+            display: flex;
+            align-items: center;
+            height: 100%;
+        }
+
+        .start-btn {
+            height: 100%;
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .start-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .system-clock {
+            color: white;
+            font-size: 12px;
+            padding: 0 15px;
+            text-align: right;
+            line-height: 1.2;
+        }
+
+        /* Menú Inicio */
+        #start-menu {
+            position: fixed;
+            bottom: 55px;
+            left: 10px;
+            width: 320px;
+            background: rgba(25, 25, 25, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            z-index: 9999;
+            overflow: hidden;
+            color: white;
+        }
+
+        .start-header {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: bold;
+            font-size: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .start-apps {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .start-app-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .start-app-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Ventanas */
+        .window {
+            position: absolute;
+            width: 600px;
+            height: 400px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .window-header {
+            height: 35px;
+            background: #f3f3f3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            cursor: move;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .window-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-close { background: #ff5f56; }
+        .btn-minimize { background: #ffbd2e; }
+        .btn-maximize { background: #27c93f; }
+
+        .window-body {
+            flex: 1;
+            padding: 10px;
+            overflow: auto;
+            position: relative;
+            background: #fff;
+        }
+
+        /* Aplicaciones */
+        textarea.notepad-area {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        iframe.browser-frame {
+            width: 100%;
+            height: calc(100% - 35px);
+            border: none;
+        }
+
+        .browser-bar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .browser-bar input {
+            flex: 1;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .browser-bar button {
+            padding: 5px 12px;
+            background: #0078d7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Escritorio -->
+    <div id="desktop">
+        <div class="shortcut" onclick="openApp('files')">
+            <span class="icon">📁</span>
+            <span>Archivos</span>
+        </div>
+        <div class="shortcut" onclick="openApp('notepad')">
+            <span class="icon">📝</span>
+            <span>Notas</span>
+        </div>
+        <div class="shortcut" onclick="openApp('browser')">
+            <span class="icon">🌐</span>
+            <span>Navegador</span>
+        </div>
+        <div class="shortcut" onclick="openApp('incognito')">
+            <span class="icon">🕵️</span>
+            <span>Modo Incógnito</span>
+        </div>
+        <div class="shortcut" onclick="openApp('calc')">
+            <span class="icon">🔢</span>
+            <span>Calculadora</span>
+        </div>
+        <div class="shortcut" onclick="openApp('terminal')">
+            <span class="icon">💻</span>
+            <span>Terminal</span>
+        </div>
+    </div>
+
+    <!-- Menú Inicio -->
+    <div id="start-menu">
+        <div class="start-header">devX OS</div>
+        <div class="start-apps">
+            <div class="start-app-item" onclick="openApp('files'); toggleStartMenu();">
+                <span>📁</span> Explorador de Archivos
+            </div>
+            <div class="start-app-item" onclick="openApp('notepad'); toggleStartMenu();">
+                <span>📝</span> Bloc de Notas
+            </div>
+            <div class="start-app-item" onclick="openApp('browser'); toggleStartMenu();">
+                <span>🌐</span> Navegador Web
+            </div>
+            <div class="start-app-item" onclick="openApp('incognito'); toggleStartMenu();">
+                <span>🕵️</span> Navegador Anónimo
+            </div>
+            <div class="start-app-item" onclick="openApp('calc'); toggleStartMenu();">
+                <span>🔢</span> Calculadora
+            </div>
+            <div class="start-app-item" onclick="openApp('terminal'); toggleStartMenu();">
+                <span>💻</span> devX Terminal
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Tareas -->
+    <div id="taskbar">
+        <div class="taskbar-left">
+            <div class="start-btn" onclick="toggleStartMenu()">🪟</div>
+        </div>
+        <div class="taskbar-center" id="taskbar-apps"></div>
+        <div class="taskbar-right">
+            <div class="system-clock" id="clock">00:00<br>01/01/2026</div>
+        </div>
+    </div>
+
+    <script>
+        let zIndexCounter = 100;
+
+        // Actualizar Reloj del Sistema
+        function updateClock() {
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const date = now.toLocaleDateString();
+            document.getElementById('clock').innerHTML = `${time}<br>${date}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Alternar Menú Inicio
+        function toggleStartMenu() {
+            const menu = document.getElementById('start-menu');
+            menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        // Sistema de Ventanas (Creación Dinámica)
+        function openApp(type) {
+            const desktop = document.getElementById('desktop');
+            const win = document.createElement('div');
+            win.className = 'window';
+            win.style.top = `${80 + Math.random() * 50}px`;
+            win.style.left = `${100 + Math.random() * 100}px`;
+            win.style.zIndex = ++zIndexCounter;
+
+            let title = '';
+            let content = '';
+
+            switch (type) {
+                case 'notepad':
+                    title = 'Bloc de Notas';
+                    content = `<textarea class="notepad-area" placeholder="Escribe algo aquí... (Se guarda automáticamente)"></textarea>`;
+                    break;
+                case 'browser':
+                    title = 'Navegador Web';
+                    content = `
+                        <div class="browser-bar">
+                            <input type="text" id="url-${zIndexCounter}" value="https://bing.com">
+                            <button onclick="navigate('${zIndexCounter}')">Ir</button>
+                        </div>
+                        <iframe id="frame-${zIndexCounter}" class="browser-frame" src="https://bing.com"></iframe>
+                    `;
+                    break;
+                case 'incognito':
+                    title = '🕵️ Navegador Anónimo (Privado)';
+                    content = `
+                        <div style="background: #222; color: #fff; padding: 5px; font-size: 11px;">
+                            🔒 Sesión anónima: Sin cookies ni historial guardado en tu navegador local.
+                        </div>
+                        <div class="browser-bar" style="margin-top: 5px;">
+                            <input type="text" id="url-${zIndexCounter}" value="https://duckduckgo.com">
+                            <button onclick="navigate('${zIndexCounter}')" style="background:#555;">Ir</button>
+                        </div>
+                        <iframe id="frame-${zIndexCounter}" class="browser-frame" src="https://duckduckgo.com"></iframe>
+                    `;
+                    break;
+                case 'calc':
+                    title = 'Calculadora';
+                    content = `
+                        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 5px; height: 100%;">
+                            <input type="text" id="calc-screen" style="grid-column: span 4; font-size: 20px; text-align: right; padding: 5px;" readonly>
+                            <button onclick="calcInput('7')">7</button><button onclick="calcInput('8')">8</button><button onclick="calcInput('9')">9</button><button onclick="calcInput('/')">/</button>
+                            <button onclick="calcInput('4')">4</button><button onclick="calcInput('5')">5</button><button onclick="calcInput('6')">6</button><button onclick="calcInput('*')">*</button>
+                            <button onclick="calcInput('1')">1</button><button onclick="calcInput('2')">2</button><button onclick="calcInput('3')">3</button><button onclick="calcInput('-')">-</button>
+                            <button onclick="calcClear()">C</button><button onclick="calcInput('0')">0</button><button onclick="calcSolve()">=</button><button onclick="calcInput('+')">+</button>
+                        </div>
+                    `;
+                    break;
+                case 'files':
+                    title = 'Explorador de Archivos';
+                    content = `
+                        <div style="display:flex; gap:10px; height: 100%;">
+                            <div style="width: 30%; border-right: 1px solid #ccc; padding-right: 5px;">
+                                <div>📁 Documentos</div>
+                                <div>📁 Descargas</div>
+                                <div>🖼️ Imágenes</div>
+                            </div>
+                            <div style="flex:1;">
+                                <h3>Documentos de devX OS</h3>
+                                <p style="font-size: 12px; color: #666; margin-top: 10px;">Sistema listo y funcionando en GitHub Pages.</p>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'terminal':
+                    title = 'devX Terminal';
+                    content = `
+                        <div style="background: black; color: #00ff00; font-family: monospace; height: 100%; padding: 10px;">
+                            devX OS v1.0 Kernel (WebOS)<br>
+                            Escribe "help" para ver los comandos disponbles.<br><br>
+                            devX> <input type="text" style="background:transparent; border:none; color:#00ff00; outline:none; font-family:monospace;" onkeydown="handleTerminal(event, this)">
+                        </div>
+                    `;
+                    break;
+            }
+
+            win.innerHTML = `
+                <div class="window-header" onmousedown="dragWindow(event, this.parentElement)">
+                    <div class="window-title">${title}</div>
+                    <div class="window-controls">
+                        <button class="control-btn btn-minimize" onclick="this.parentElement.parentElement.parentElement.style.display='none'"></button>
+                        <button class="control-btn btn-maximize" onclick="maximizeWin(this.parentElement.parentElement.parentElement)"></button>
+                        <button class="control-btn btn-close" onclick="this.parentElement.parentElement.parentElement.remove()"></button>
+                    </div>
+                </div>
+                <div class="window-body">${content}</div>
+            `;
+
+            win.onmousedown = () => win.style.zIndex = ++zIndexCounter;
+            desktop.appendChild(win);
+        }
+
+        // Navegación Web
+        function navigate(id) {
+            const url = document.getElementById(`url-${id}`).value;
+            document.getElementById(`frame-${id}`).src = url.startsWith('http') ? url : `https://${url}`;
+        }
+
+        // Arrastrar Ventanas
+        function dragWindow(e, win) {
+            let posX = e.clientX - win.offsetLeft;
+            let posY = e.clientY - win.offsetTop;
+
+            function move(e) {
+                win.style.left = `${e.clientX - posX}px`;
+                win.style.top = `${e.clientY - posY}px`;
+            }
+
+            function stop() {
+                document.removeEventListener('mousemove', move);
+                document.removeEventListener('mouseup', stop);
+            }
+
+            document.addEventListener('mousemove', move);
+            document.addEventListener('mouseup', stop);
+        }
+
+        // Maximizar Ventana
+        function maximizeWin(win) {
+            if (win.style.width === '100vw') {
+                win.style.width = '600px';
+                win.style.height = '400px';
+                win.style.top = '100px';
+                win.style.left = '100px';
+            } else {
+                win.style.width = '100vw';
+                win.style.height = 'calc(100vh - 48px)';
+                win.style.top = '0';
+                win.style.left = '0';
+            }
+        }
+
+        // Lógica de Calculadora
+        function calcInput(val) { document.getElementById('calc-screen').value += val; }
+        function calcClear() { document.getElementById('calc-screen').value = ''; }
+        function calcSolve() {
+            try { document.getElementById('calc-screen').value = eval(document.getElementById('calc-screen').value); }
+            catch { document.getElementById('calc-screen').value = 'Error'; }
+        }
+
+        // Comandos de la Terminal
+        function handleTerminal(e, input) {
+            if (e.key === 'Enter') {
+                const cmd = input.value.trim().toLowerCase();
+                if (cmd === 'help') alert('Comandos disponibles: help, clear, ver');
+                else if (cmd === 'ver') alert('devX OS Build 2026.1');
+                else if (cmd === 'clear') input.parentElement.innerHTML = 'devX> <input type="text" style="background:transparent; border:none; color:#00ff00; outline:none; font-family:monospace;" onkeydown="handleTerminal(event, this)">';
+                input.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
